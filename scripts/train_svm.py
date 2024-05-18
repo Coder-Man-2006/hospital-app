@@ -16,6 +16,6 @@ def train_svm(X, y):
 
 # Load preprocessed data
 X = pd.read_csv('X.csv')
-y = pd.read_csv('y.csv').values.ravel()  # Ensure y is a 1D array
+y = pd.read_csv('y.csv')
 
 train_svm(X, y)

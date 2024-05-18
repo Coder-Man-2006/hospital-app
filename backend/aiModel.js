@@ -1,13 +1,19 @@
 // aiModel.js
 const { spawn } = require('child_process');
 const path = require('path');
-const fs = require('fs');
+const axios = require('axios');
 
-const predictDoctorAssignment = (patientData, callback) => {
+const fetchNeureloData = async (endpoint) => {
+    const url = `https://api.neurelo.com/${endpoint}`;
+    const headers = {
+        'Authorization': 'Bearer YOUR_NEURELO_API_KEY'
+    };
+    const response = await axios.get(url, { headers });
+    return response.data;
+};
+
+const predictDoctorAssignment = async (patientData, callback) => {
     const predictScript = path.join(__dirname, 'scripts', 'predict_svm.py');
-    const newDataPath = path.join(__dirname, 'scripts', 'new_data.csv');
-    fs.writeFileSync(newDataPath, patientData);
-
     const process = spawn('python', [predictScript]);
 
     let output = '';
@@ -25,4 +31,4 @@ const predictDoctorAssignment = (patientData, callback) => {
     process.stdin.end();
 };
 
-module.exports = { predictDoctorAssignment };
+module.exports = { predictDoctorAssignment, fetchNeureloData };

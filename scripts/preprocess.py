@@ -1,26 +1,28 @@
 # preprocess.py
 import pandas as pd
-from pymongo import MongoClient
+import requests
+
+def fetch_data_from_neurelo(endpoint):
+    url = f"https://api.neurelo.com/{endpoint}"
+    headers = {
+        'Authorization': 'Bearer YOUR_NEURELO_API_KEY'
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()  # Raise an error for bad status codes
+    return response.json()
 
 def preprocess_data():
-    # Connect to MongoDB
-    client = MongoClient('mongodb://localhost:27017/')
-    db = client['hospital']
-    doctors_collection = db['doctors']
-    patients_collection = db['patients']
-
-    # Fetch data from MongoDB
-    doctors = pd.DataFrame(list(doctors_collection.find()))
-    patients = pd.DataFrame(list(patients_collection.find()))
+    doctors = pd.DataFrame(fetch_data_from_neurelo('doctors'))
+    patients = pd.DataFrame(fetch_data_from_neurelo('patients'))
 
     # Example preprocessing; adjust as necessary
-    doctors['combined_specializations'] = doctors.apply(
-        lambda row: row['specialization1'] + ',' + row['specialization2'], axis=1)
-    doctors = pd.get_dummies(doctors, columns=['combined_specializations'])
+    doctors['combined_confidence'] = (doctors['confidence_rating_1'] + doctors['confidence_rating_2']) / 2
+    doctors = doctors.drop(columns=['_id'])  # Drop MongoDB ObjectId
+    
+    patients = patients.drop(columns=['_id'])  # Drop MongoDB ObjectId
 
-    data = patients.merge(doctors, left_on='condition', right_on='combined_specializations')
-    X = data.drop(columns=['first_name', 'last_name', '_id_x', '_id_y', 'condition', 'name'])
-    y = data['name']
+    X = patients[['first_name', 'last_name', 'condition']]
+    y = doctors[['name', 'specialization_1', 'specialization_2', 'combined_confidence']]
 
     return X, y
 
