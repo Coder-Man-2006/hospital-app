@@ -14,12 +14,13 @@ def preprocess_data():
     patients = pd.DataFrame(list(patients_collection.find()))
 
     # Example preprocessing; adjust as necessary
-    doctors['specializations'] = doctors['specializations'].apply(lambda x: ','.join(x))
-    doctors = pd.get_dummies(doctors, columns=['specializations'])
+    doctors['combined_specializations'] = doctors.apply(
+        lambda row: row['specialization1'] + ',' + row['specialization2'], axis=1)
+    doctors = pd.get_dummies(doctors, columns=['combined_specializations'])
 
-    data = patients.merge(doctors, left_on='illness_category', right_on='specializations')
-    X = data.drop(columns=['name_x', 'name_y', '_id_x', '_id_y', 'illness_category', 'symptoms', 'arrival_time'])
-    y = data['name_y']
+    data = patients.merge(doctors, left_on='condition', right_on='combined_specializations')
+    X = data.drop(columns=['first_name', 'last_name', '_id_x', '_id_y', 'condition', 'name'])
+    y = data['name']
 
     return X, y
 
